@@ -17,6 +17,8 @@ void AMovingPlatform::BeginPlay()
 	Super::BeginPlay();
 
 	StartLocation = GetActorLocation();
+
+	//UE_LOG(LogTemp, Display, TEXT("Begin Play: %s"), *Name);
 }
 
 // Called every frame
@@ -24,26 +26,46 @@ void AMovingPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//Move plat forwards
-		//Get current location
-	FVector CurrentLocation = GetActorLocation();
+	MovePlatform(DeltaTime);
+	RotatePlatform(DeltaTime);
+}
 
-		//Add vector to that location
-	CurrentLocation = CurrentLocation + PlatformVelocity * DeltaTime;
-	
-		//Set the location
-	SetActorLocation(CurrentLocation);
-	
-	//Send platform back if gone too far
-		//Check how far we've moved
-	float DistanceMoved = FVector::Dist(StartLocation, CurrentLocation);
-		
-		//Reverse direction of motion if gone too far
-	if(DistanceMoved > MoveDistance){
+void AMovingPlatform::MovePlatform(float DeltaTime)
+{
+	//Condition created to avoid platform traveling beyond desired MoveDistance by calculating starting point vs MoveDistance
+	if(ShouldPlatformReturn()){
+		//Gathers the Vector float of the Platforms movement
 		FVector MoveDirection = PlatformVelocity.GetSafeNormal();
+
+		//Resets startdirection when move distance is reached 
 		StartLocation = StartLocation + MoveDirection * MoveDistance;
 		SetActorLocation(StartLocation);
+
+		//Reverses the direction of platform
 		PlatformVelocity = -PlatformVelocity;
+	}
+	else
+	{
+		//Gets Platforms current locaiton
+		FVector CurrentLocation = GetActorLocation();
+		//Sets current location realtive to Deltatime instead of tickrate
+		CurrentLocation = CurrentLocation + PlatformVelocity * DeltaTime;
+		SetActorLocation(CurrentLocation);
 	}
 }
 
+void AMovingPlatform::RotatePlatform(float DeltaTime)
+{
+	UE_LOG(LogTemp, Display, TEXT("Logging Platform Rotation"));
+	AddActorLocalRotation(RotationVelocity * DeltaTime);
+}
+
+bool AMovingPlatform::ShouldPlatformReturn() const
+{
+	return GetDistanceMoved() > MoveDistance;
+}
+
+float AMovingPlatform::GetDistanceMoved() const
+{
+	return FVector::Dist(StartLocation, GetActorLocation());
+}
